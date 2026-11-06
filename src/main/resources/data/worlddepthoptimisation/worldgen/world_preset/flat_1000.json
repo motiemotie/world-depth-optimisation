@@ -1,0 +1,31 @@
+{
+	"dimensions": {
+		"minecraft:overworld": {
+			"type": "minecraft:overworld",
+			"generator": {
+				"type": "minecraft:flat",
+				"settings": {
+					"biome": "minecraft:plains",
+					"features": false,
+					"lakes": false,
+					"structure_overrides": [],
+					"layers": [
+					{"block": "minecraft:air", "height": 700},
+					{"block": "minecraft:bedrock", "height": 1},
+					{"block": "minecraft:stone", "height": 360},
+					{"block": "minecraft:dirt", "height": 3},
+					{"block": "minecraft:grass_block", "height": 1}
+					]
+				}
+			}
+		},
+		"minecraft:the_end": {
+			"type": "minecraft:the_end",
+			"generator": {"type": "minecraft:noise", "biome_source": {"type": "minecraft:the_end"}, "settings": "minecraft:end"}
+		},
+		"minecraft:the_nether": {
+			"type": "minecraft:the_nether",
+			"generator": {"type": "minecraft:noise", "biome_source": {"type": "minecraft:multi_noise", "preset": "minecraft:nether"}, "settings": "minecraft:nether"}
+		}
+	}
+}

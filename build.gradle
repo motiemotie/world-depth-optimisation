@@ -1,0 +1,99 @@
+plugins {
+	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+}
+
+loom {
+	splitEnvironmentSourceSets()
+
+	mods {
+		"worlddepthoptimisation" {
+			sourceSet sourceSets.main
+			sourceSet sourceSets.client
+		}
+	}
+
+	runs {
+		client {
+			// Fixed, so memory figures compare between runs.
+			vmArg "-Xmx6G"
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${project.minecraft_version}"
+	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	productionRuntimeMods "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+processResources {
+	// For the control world: without this file the overworld keeps its vanilla height. See bench.ps1 -VanillaHeight.
+	if (project.hasProperty("vanillaHeight")) {
+		exclude "data/minecraft/dimension_type/overworld.json"
+	}
+	def version = project.version
+	inputs.property "version", version
+	filesMatching("fabric.mod.json") {
+		expand "version": version
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = 25
+}
+
+java {
+	sourceCompatibility = JavaVersion.VERSION_25
+	targetCompatibility = JavaVersion.VERSION_25
+}
+
+// The full mod, with the benchmark tools.
+jar {
+	archiveClassifier = "benchmark"
+}
+
+// The mod for players: the same classes, without the benchmark tools or the tall overworld the benchmarks need. It changes no world
+// settings, and acts only in worlds another mod or datapack has made tall. Its own fabric.mod.json and mixin list are in src/release.
+def releaseJar = tasks.register("releaseJar", Jar) {
+	def full = tasks.named("jar").flatMap { it.archiveFile }
+	def archives = project.services.get(ArchiveOperations)
+	dependsOn "jar"
+	archiveClassifier = ""
+	from(full.map { archives.zipTree(it) }) {
+		exclude "META-INF/MANIFEST.MF"
+		exclude "fabric.mod.json"
+		exclude "worlddepthoptimisation.mixins.json"
+		exclude "worlddepthoptimisation.client.mixins.json"
+		exclude "assets/**"
+		exclude "data/**"
+		exclude "motie/worlddepthoptimisation/client/**"
+		exclude "motie/worlddepthoptimisation/ChunkStageTimer*"
+		exclude "motie/worlddepthoptimisation/PacketMeter*"
+		exclude "motie/worlddepthoptimisation/mixin/ChunkStepMixin*"
+		exclude "motie/worlddepthoptimisation/mixin/ChunkMapMixin*"
+		exclude "motie/worlddepthoptimisation/mixin/ConnectionMixin*"
+	}
+	from("src/release") {
+		def version = project.version
+		inputs.property "version", version
+		filesMatching("fabric.mod.json") {
+			expand "version": version
+		}
+	}
+}
+
+tasks.named("build") {
+	dependsOn releaseJar
+}
+
+// Launches the release jar in a real game install, separate from the development environment.
+tasks.register("prodClient", net.fabricmc.loom.task.prod.ClientProductionRunTask) {
+	// Replaces the default, which would also load the benchmark jar.
+	mods.setFrom(releaseJar, configurations.named("productionRuntimeMods"))
+	// Outside build/, where Gradle would clear it as stale output.
+	runDir = layout.projectDirectory.dir("run-prod")
+	if (project.hasProperty("prodWorld")) {
+		programArgs.addAll("--quickPlaySingleplayer", project.property("prodWorld").toString())
+	}
+}

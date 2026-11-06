@@ -1,0 +1,20 @@
+{
+	"schemaVersion": 1,
+	"id": "worlddepthoptimisation",
+	"version": "${version}",
+	"name": "World Depth Optimisation",
+	"description": "Makes worlds made tall by other mods or datapacks cheaper: bedrock rides up under high ground with nothing below it, keeping a configurable depth of rock under the surface. Changes no world settings and does nothing at vanilla height.",
+	"authors": ["motie"],
+	"license": "All-Rights-Reserved",
+	"environment": "*",
+	"entrypoints": {
+		"main": ["motie.worlddepthoptimisation.WorldDepthOptimisationMod"]
+	},
+	"mixins": ["worlddepthoptimisation.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
